@@ -358,7 +358,7 @@ def renameMenu(sections):
     while new == '':
         new = input('>>')
 
-        if name == '':
+        if new == '':
             clear()
             print("Operation canceled.")
             input('Press Enter to continue.')
