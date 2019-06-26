@@ -385,6 +385,7 @@ def addMenu(sections):
     if ip == 1:
         print('Ran out of Ips.')
         print('Please increase IP range by re-running the setup wizard.')
+        return 1
     pubServer = sections['Interface0']['#pubKey']
     serverIP = sections['Interface0']['#Host'][0] + ':' + sections['Interface0']['ListenPort'][0]
     names = []
