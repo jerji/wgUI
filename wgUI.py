@@ -93,6 +93,7 @@ def writeCfg(output, sections):
     #Write the file
     file.write(conf)
     file.close()
+    restartVPN()
 
 ### dictToConf(Dictionary of config)
 ### Takes a dictionary config as input and makes it into a config as a string
@@ -249,23 +250,25 @@ def checkIP(ip,s):
 
 ###Main menu
 def main():
-
+    if not os.getuid() == 0:
+        print('Please run this script as root.')
+        return 1
     isMenu = 1
     while isMenu:
         #Re-read config
         clear()
-        sections = readCfg(configFile)
+        sections = readCfg('/etc/wireguard/'+ configFile)
 
         #Check if all the fields are filled out
         if not '#Host' in sections['Interface0'] or not '#pubKey' in sections['Interface0'] or not '#ipRange' in sections['Interface0']:
-            writeCfg(configFile, firstConfig(sections))
+            writeCfg('/etc/wireguard/'+ configFile, firstConfig(sections))
         #Check if the names are all filled out
         for section in sections:
             if 'Peer' in section and not '#Name' in sections[section]:
                 print('Looks like there is an unnamed user in your config.')
                 print('Press enter to go to the naming menu.')
                 input('>')
-                writeCfg(configFile, nameMenu(sections))
+                writeCfg('/etc/wireguard/'+ configFile, nameMenu(sections))
 
         #Main menu
         clear()
@@ -293,7 +296,7 @@ def main():
             #Make sure command didnt fail
             if not new == 1:
                 #Write config
-                writeCfg(configFile, new)
+                writeCfg('/etc/wireguard/'+ configFile, new)
                 print('User added.')
             else:
                 print("Operation canceled.")
@@ -309,15 +312,16 @@ def main():
             print('\nPlease type the name of the user you would like to remove:')
             user = input('>')
             clear()
+
             #delete and write config
-            writeCfg(configFile, remEntry(user, sections))
+            writeCfg('/etc/wireguard/'+ configFile, remEntry(user, sections))
             input('Press Enter to continue.')
         #Rename user
         elif var == "4":
             renameMenu(sections)
         #Relaunch wizard
         elif var == "w":
-            writeCfg(configFile, firstConfig(sections))
+            writeCfg('/etc/wireguard/'+ configFile, firstConfig(sections))
         #Exit
         elif var == "5":
             isMenu = 0
@@ -373,7 +377,7 @@ def renameMenu(sections):
             new = ''
 
     #Write config
-    writeCfg(configFile, renameEntry(old, new, sections))
+    writeCfg('/etc/wireguard/'+ configFile, renameEntry(old, new, sections))
     input('Press Enter to continue.')
 
 ###addMenu(Dictionary)
@@ -459,7 +463,7 @@ def addMenu(sections):
 def firstConfig(sections):
     #Ask for IP or hostname of server
     print('Looks like it is the first time you use this tool!')
-    print('I just need to know the IP or hostname of your server.')
+    print('I just need to know the IP or hostname and port of your server in format hostname:port')
     ip = ''
     while ip == '':
         ip = input('>>')
@@ -555,6 +559,10 @@ def nameMenu(sections):
             sections[section].update(info)
 
     return sections
+
+def restartVPN():
+    p = subprocess.run(['wg-quick', 'down', '/etc/wireguard/'+ configFile ], stdout=subprocess.PIPE)
+    p = subprocess.run(['wg-quick', 'up', '/etc/wireguard/'+ configFile ], stdout=subprocess.PIPE)
 
 
 if __name__ == '__main__': main()
