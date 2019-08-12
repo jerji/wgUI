@@ -4,8 +4,9 @@ import subprocess
 import os
 import ipaddress
 import re
+import sys
 
-configFile = 'example2.conf'
+configFile = 'example1.conf'
 
 clear = lambda: os.system('clear')
 
@@ -243,6 +244,15 @@ def checkIP(ip,s):
         #Regex without subnet
         pat = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
     return pat.match(ip)
+
+### restartVPN()
+### Restarts the wireguard VPN
+def restartVPN():
+    #Bring interface down
+    p = subprocess.run(['wg-quick', 'down', '/etc/wireguard/'+ configFile ], stdout=subprocess.PIPE)
+    #Bring interface up
+    p = subprocess.run(['wg-quick', 'up', '/etc/wireguard/'+ configFile ], stdout=subprocess.PIPE)
+
 
 #################
 ### UI Stuff  ###
@@ -560,10 +570,64 @@ def nameMenu(sections):
 
     return sections
 
-def restartVPN():
-    p = subprocess.run(['wg-quick', 'down', '/etc/wireguard/'+ configFile ], stdout=subprocess.PIPE)
-    p = subprocess.run(['wg-quick', 'up', '/etc/wireguard/'+ configFile ], stdout=subprocess.PIPE)
+##############################
+### Non Interractive stuff ###
+##############################
 
+def ArgParse(sections):
+
+    args = sys.argv()[1:]
+
+    arg = args[1]
+    if arg == 'add':
+        argAdd(args[1:], sections)
+    elif arg == 'list':
+        argList(args[1:], sections)
+    elif arg == 'remove':
+        argRemove(args[1:], sections)
+    elif arg == 'rename':
+        argRename(args[1:], sections)
+    elif arg == 'setup':
+        argSetup(sections)
+    elif arg == '-h':
+        #TODO: Help
+        sys.exit(0)
+    else:
+        return
+
+def argAdd(args,sections):
+
+    #Get all the needed parameters
+    keys = genKeys()
+    ip = findIP(sections)
+    if ip == 1:
+        print('Ran out of Ips.')
+        print('Please increase IP range by re-running the setup wizard.')
+        return 1
+    pubServer = sections['Interface0']['#pubKey']
+    serverIP = sections['Interface0']['#Host'][0] + ':' + sections['Interface0']['ListenPort'][0]
+    names = []
+    for section in sections:
+        if 'Peer' in section:
+            names.append(sections[section]['#Name'][0])
+    #args: name,keepalive,dns,allowedIPs,file or console,qr or config
+    sys.exit(0)
+
+def argList(args,sections):
+    listEntries(sections)
+    sys.exit(0)
+
+def argRemove(args,sections):
+    #args: name of user
+    sys.exit(0)
+
+def argRename(args,sections):
+    #args:currName, newName
+    sys.exit(0)
+
+def argSetup(args,sections):
+    #args: ip:port, range,
+    sys.exit(0)
 
 if __name__ == '__main__': main()
 
