@@ -181,8 +181,8 @@ def status(status,sections):
             print('Allowed IPs: '+''.join(status[sStatus]['allowedIPs']))
             if 'endpoint' in status[sStatus]:
                 print('Endpoint: '+''.join(status[sStatus]['endpoint']))
-            print('Last Handshake: '+''.join(status[sStatus]['lastHandshake']))
-            print('Data: '+''.join(status[sStatus]['transfer']))
+                print('Last Handshake: '+''.join(status[sStatus]['lastHandshake']))
+                print('Data: '+''.join(status[sStatus]['transfer']))
             print('')
 
 ### addEntry(PublicKey, PresharedKey, AllowedIPs, Endpoint, PersistentKeepalive, Additional fields as dict, Dictionary to mod)
