@@ -94,7 +94,6 @@ def writeCfg(output, sections):
     #Write the file
     file.write(conf)
     file.close()
-    restartVPN()
 
 ### dictToConf(Dictionary of config)
 ### Takes a dictionary config as input and makes it into a config as a string
@@ -124,6 +123,65 @@ def listEntries(sections):
             print('    Public Key: '+ ''.join(sections[section]['PublicKey']))
             if 'Endpoint' in sections[section]:
                 print('    Last IP: '+ ''.join(sections[section]['Endpoint']))
+            print('')
+
+def parseWg():
+    p = subprocess.run(['wg'], stdout=subprocess.PIPE)
+    wg = p.stdout.decode("ascii")
+    data = wg.splitlines()
+    status = {}
+    i=0
+    section = ''
+    for line in data:
+        if 'endpoint' in line: (key,val) = line.split(':',1)
+        elif line.strip() == '': key = ''; val = ''
+        else : (key,val) = line.split(':',1)
+
+        if key.strip() == 'public key': key = 'pubKey'
+        if key.strip() == 'private key': key = 'privKey'
+        if key.strip() == 'listening port': key = 'serverPort'
+        if key.strip() == 'allowed ips' : key = 'allowedIPs'
+        if key.strip() == 'latest handshake' : key = 'lastHandshake'
+
+
+
+        if key.strip() == 'interface' or key.strip() == 'peer':
+            section = key.strip() + str(i)
+            i=i+1
+            status[section] = {}
+            if key == 'peer': status[section]['pubKey'] = val
+            if key == 'interface': status[section]['name'] = val
+        else:
+            status[section][key.strip()] = val.strip()
+
+    return status
+
+def status(status,sections):
+    for sStatus in status:
+        if 'interface' in sStatus:
+            peer = sections['Interface0']
+            print('Server')
+            print('Interface: '+''.join(status[sStatus]['name']))
+            print('Host: '+ ''.join(peer['#Host']))
+            print('IP on VPN: '+''.join(peer['Address']))
+            print('Public Key: '+''.join(status[sStatus]['pubKey']))
+            print('')
+
+
+        if 'peer' in sStatus:
+
+            peer = {}
+            for section in sections:
+                if 'Peer' in section:
+                    if status[sStatus]['pubKey'].strip() == ''.join(sections[section]['PublicKey']):
+                        peer = sections[section]
+            print('Name: '+''.join(peer['#Name']))
+            print('Public Key: '+''.join(peer['PublicKey']))
+            print('IP: '+''.join(peer['AllowedIPs']))
+            print('Allowed IPs: '+''.join(status[sStatus]['allowedIPs']))
+            print('Endpoint: '+''.join(status[sStatus]['endpoint']))
+            print('Last Handshake: '+''.join(status[sStatus]['lastHandshake']))
+            print('Data: '+''.join(status[sStatus]['transfer']))
             print('')
 
 ### addEntry(PublicKey, PresharedKey, AllowedIPs, Endpoint, PersistentKeepalive, Additional fields as dict, Dictionary to mod)
@@ -260,6 +318,7 @@ def restartVPN():
 
 ###Main menu
 def main():
+    restartVPN()
     if not os.getuid() == 0:
         print('Please run this script as root.')
         return 1
@@ -290,8 +349,10 @@ def main():
         print('2 - Add user to VPN')
         print('3 - Remove user from VPN')
         print('4 - Rename user')
+        print('5 - Server status')
+        print('6 - Restart VPN')
         print('w - Re-launch setup wizard')
-        print('5 - Exit')
+        print('x - Exit')
         var = input('>')
         clear()
 
@@ -332,8 +393,18 @@ def main():
         #Relaunch wizard
         elif var == "w":
             writeCfg('/etc/wireguard/'+ configFile, firstConfig(sections))
-        #Exit
+        #Server Status
         elif var == "5":
+            status(parseWg(),sections)
+            input('Press Enter to continue.')
+        #Restart VPN
+        elif var == "6":
+            restartVPN()
+            print("Wireguard VPN restarted.")
+            input('Press Enter to continue.')
+        #Exit
+        elif var == "x":
+            restartVPN()
             isMenu = 0
         else:
             print('Invalid menu option.\nPress Enter to continue.')
@@ -610,6 +681,8 @@ def argAdd(args,sections):
     for section in sections:
         if 'Peer' in section:
             names.append(sections[section]['#Name'][0])
+
+
     #args: name,keepalive,dns,allowedIPs,file or console,qr or config
     sys.exit(0)
 
@@ -630,5 +703,4 @@ def argSetup(args,sections):
     sys.exit(0)
 
 if __name__ == '__main__': main()
-
 # TODO: non-interactive mode, initial creation of config file
