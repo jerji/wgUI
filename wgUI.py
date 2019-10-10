@@ -179,7 +179,8 @@ def status(status,sections):
             print('Public Key: '+''.join(peer['PublicKey']))
             print('IP: '+''.join(peer['AllowedIPs']))
             print('Allowed IPs: '+''.join(status[sStatus]['allowedIPs']))
-            print('Endpoint: '+''.join(status[sStatus]['endpoint']))
+            if 'endpoint' in status[sStatus]:
+                print('Endpoint: '+''.join(status[sStatus]['endpoint']))
             print('Last Handshake: '+''.join(status[sStatus]['lastHandshake']))
             print('Data: '+''.join(status[sStatus]['transfer']))
             print('')
